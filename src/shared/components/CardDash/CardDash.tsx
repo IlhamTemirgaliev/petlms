@@ -15,7 +15,7 @@ export default function CardDash({ id, heading, children, icon }: CardDashProps)
   return (
     <Card
       key={id}
-      sx={{ width: 320, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+      sx={{ width: 330, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
     >
       <CardMedia
         component='img'

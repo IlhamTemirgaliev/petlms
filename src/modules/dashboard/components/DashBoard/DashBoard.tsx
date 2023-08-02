@@ -18,6 +18,7 @@ import { findCourse } from '../../../../shared/services/course.services'
 import { AxiosError } from 'axios'
 import { AppContext } from '../../../../App'
 import { getClasses } from '../../../../shared/services/class.service'
+import { FaEdit } from 'react-icons/fa'
 
 interface Course {
   course_id: number
@@ -217,17 +218,20 @@ export default function Dashboard() {
               <CardDash
                 icon={
                   <>
-                    <Button size='small'>
+                    <Button className={styles.btn_icon} size='small'>
                       <PiStudentFill />
                     </Button>
-                    <Button size='small'>
+                    <Button  className={styles.btn_icon} size='small'>
                       <BiBell />
                     </Button>
-                    <Button size='small'>
+                    <Button  className={styles.btn_icon} size='small'>
                       <BsFolder />
                     </Button>
-                    <Button size='small'>
+                    <Button  className={styles.btn_icon} size='small'>
                       <BiShareAlt />
+                    </Button>
+                    <Button  className={styles.btn_icon } size='small'>
+                    <FaEdit />
                     </Button>
                   </>
                 }
