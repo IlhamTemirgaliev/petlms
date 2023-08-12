@@ -13,7 +13,7 @@ import CustomSelect from '../../../../shared/components/Select/Select'
 import { z } from 'zod'
 import { ClassesSchema } from '../../../../shared/schemas/classes.schema'
 import { AiOutlinePlus } from 'react-icons/ai'
-import { findOffice, sendClass } from '../../../../shared/services/dashboard.services'
+import { findOffice, sendClass, updateClass } from '../../../../shared/services/dashboard.services'
 import { findCourse } from '../../../../shared/services/course.services'
 import { AxiosError } from 'axios'
 import { AppContext } from '../../../../App'
@@ -30,7 +30,7 @@ interface Office {
   name: string
 }
 
-interface ClassInfo {
+export interface ClassInfo {
   id: number
   description: string
   start_date: string
@@ -39,6 +39,7 @@ interface ClassInfo {
   course_code: string
   course_name: string
   branch_name: string
+ 
 }
 
 export type FormCardAdd = z.infer<typeof ClassesSchema>
@@ -48,7 +49,9 @@ export default function Dashboard() {
   const [classes, setClasses] = useState<ClassInfo[]>([])
   const [office, setOffice] = useState<Office[]>([])
   const { openErrorMessage } = useContext(AppContext)
-
+  const [idChangeCourse, setIdChangeCourse] = useState<number>(1)
+  const [value, setValue] =useState<ClassInfo>();
+  const [edit, setEdit] = useState<boolean>(false)
   const {
     register,
     handleSubmit,
@@ -56,13 +59,22 @@ export default function Dashboard() {
     reset,
   } = useForm<FormCardAdd>({
     resolver: zodResolver(ClassesSchema),
-  })
-
+    defaultValues: {
+      course_code: '',
+      course_id: 0,
+      branch_id: 0,
+      description: '',
+      start_date: '',
+      end_date: '',
+      open_for_enrollment: false,
+    },
+  });
+  console.log(value)
   const onSubmit = async (formData: FormCardAdd) => {
     try {
       await sendClass(formData)
-      reset()
       setOpen(false)
+    reset()
     } catch (error) {
       if (error instanceof AxiosError) {
         openErrorMessage(error.response?.data.message)
@@ -72,8 +84,21 @@ export default function Dashboard() {
 
   const handleCloseModal = () => {
     setOpen(false)
+    setEdit(false)
+    
   }
 
+  const updateBoard = async (formUpdate: FormCardAdd) => {
+    try {
+      await updateClass(idChangeCourse, formUpdate)
+      setOpen(false)
+      reset()
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        openErrorMessage(error.response?.data.message)
+      }
+    }
+  }
   useEffect(() => {
     const classes = async () => {
       try {
@@ -103,6 +128,7 @@ export default function Dashboard() {
         const resOffice = await findOffice()
         setOffice(resOffice.data)
         setCourse(res.data)
+        console.log(setCourse(res.data))
       } catch (error) {
         //
       }
@@ -117,14 +143,16 @@ export default function Dashboard() {
         <CssFab
           onClick={() => {
             setOpen(!open)
+           
+
           }}
         >
           <AiOutlinePlus style={{ fontSize: '30px', width: 'max-content' }} />
         </CssFab>
         <Modal
-          title='Добавить новый курс'
+          title={edit ? `Вы изменяете Dashboard: ` : 'Заполните поля'}
           desc=''
-          submit={handleSubmit(onSubmit)}
+          submit={edit ? handleSubmit(updateBoard) : handleSubmit(onSubmit)}
           isOpen={open}
           onClose={handleCloseModal}
           btn={
@@ -135,13 +163,14 @@ export default function Dashboard() {
               color='primary'
               className={styles.signUp__btn}
             >
-              Добавить курс
+              {edit ? 'Сохранить изминения' : 'Добавить курс '}
             </CssButton>
           }
         >
           <CssTextField
             label='Названия группы'
             type='text'
+            defaultValue={value?.course_code}
             {...register('course_code')}
             error={!!errors.course_code}
             helperText={errors.course_code?.message}
@@ -150,18 +179,20 @@ export default function Dashboard() {
           </CssTextField>
 
           <CustomSelect
-            label='Офисы'
+            label={edit ? `${value?.branch_name} ` : 'Офисы'}
             id='branch_name'
+            
             {...register('branch_id')}
             error={!!errors.branch_id}
             helperText={errors.branch_id?.message}
           >
             {office.map((data) => {
-              return <MenuItem value={data.id}>{data.name}</MenuItem>
+              return <MenuItem  value={data.id}>{data.name}</MenuItem>
             })}
           </CustomSelect>
           <CustomSelect
-            label='Группа'
+            label={edit ? `${value?.course_name} ` : 'Группа'}
+           
             id='course_name'
             {...register('course_id')}
             error={!!errors.course_id}
@@ -177,6 +208,7 @@ export default function Dashboard() {
             fullWidth
             multiline
             minRows={3}
+            defaultValue={value?.description}
             {...register('description')}
             error={!!errors.description}
             helperText={errors.description?.message}
@@ -184,6 +216,7 @@ export default function Dashboard() {
           <CssTextField
             label='Начало курсов'
             type='date'
+            value={edit ? value?.start_date : ''}
             {...register('start_date')}
             error={!!errors.start_date}
             helperText={errors.start_date?.message}
@@ -194,6 +227,7 @@ export default function Dashboard() {
           <CssTextField
             label='Конец курсов'
             type='date'
+            value={ edit ? value?.end_date : ''}
             {...register('end_date')}
             error={!!errors.end_date}
             helperText={errors.end_date?.message}
@@ -208,49 +242,57 @@ export default function Dashboard() {
           />
         </Modal>
       </div>
-      <div className={styles.wrapper}>
-        <div className={styles.container}>
-          {classes.map((item, indx) => (
-            <div
-              key={indx}
-              className={styles.card}
-            >
-              <CardDash
-                icon={
-                  <>
-                    <Button className={styles.btn_icon} size='small'>
-                      <PiStudentFill />
-                    </Button>
-                    <Button  className={styles.btn_icon} size='small'>
-                      <BiBell />
-                    </Button>
-                    <Button  className={styles.btn_icon} size='small'>
-                      <BsFolder />
-                    </Button>
-                    <Button  className={styles.btn_icon} size='small'>
-                      <BiShareAlt />
-                    </Button>
-                    <Button  className={styles.btn_icon } size='small'>
-                    <FaEdit />
-                    </Button>
-                  </>
-                }
-                id={item.id}
-                heading={<span> {`${item.course_code} ${item.course_name}`} </span>}
+     <div className={styles.wrapper}>
+  <div className={styles.container}>
+    {classes.map((item, indx) => (
+      <div key={indx} className={styles.card}>
+     
+        <CardDash
+          icon={
+            <>
+              <Button className={styles.btn_icon} size='small'>
+                <PiStudentFill />
+              </Button>
+              <Button className={styles.btn_icon} size='small'>
+                <BiBell />
+              </Button>
+              <Button className={styles.btn_icon} size='small'>
+                <BsFolder />
+              </Button>
+              <Button className={styles.btn_icon} size='small'>
+                <BiShareAlt />
+              </Button>
+              <Button
+                onClick={() => {
+                  setOpen(true);
+                  setEdit(true);
+                  setIdChangeCourse(item.id);
+                  setValue(item)
+                }}
+                className={styles.btn_icon}
+                size='small'
               >
-                {item.description ? (
-                  <p>{item.description}</p>
-                ) : (
-                  <p>
-                    Lizards are a widespread group of squamate reptiles, with over 6,000 species, ranging across all
-                    continents except Antarctica
-                  </p>
-                )}
-              </CardDash>
-            </div>
-          ))}
-        </div>
+                <FaEdit />
+              </Button>
+            </>
+          }
+          id={item.id}
+          heading={<span>{`${item.course_code} ${item.course_name}`}</span>}
+        >
+          {item.description ? (
+            <p>{item.description}</p>
+          ) : (
+            <p>
+              Lizards are a widespread group of squamate reptiles, with over 6,000 species, ranging across all
+              continents except Antarctica
+            </p>
+          )}
+        </CardDash>
       </div>
+    ))}
+  </div>
+</div>
+
     </>
   )
 }

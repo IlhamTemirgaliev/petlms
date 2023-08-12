@@ -19,4 +19,11 @@ export function sendClass(data: FormCardAdd) {
     },
   })
 }
+export function updateClass(id: number, data:FormCardAdd) {
+  return axios.patch(`${api}/classes/${id}`, data, {
+    headers: {
+      authorization: Cookies.get('token'),
+    },
+  })
+}
 

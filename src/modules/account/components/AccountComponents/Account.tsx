@@ -51,7 +51,7 @@ export default function Account() {
   }, [request])
 
   const submitUbdate = () => {
-    setvisibl((visbl) => !visbl)
+    setvisibl(!visbl)
   }
 
   const onSubmit = async (contact: Contact) => {
